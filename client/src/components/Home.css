@@ -1,0 +1,57 @@
+@import url('https://fonts.googleapis.com/css2?family=Monofett&family=Open+Sans&display=swap');
+
+.full_page{
+    height: 100vh;
+    width:100%;
+    background-color: #00A9FF;
+}
+.centre-top{
+    font-family: 'Open Sans', sans-serif;
+    color: white;
+    padding: 10px;
+    height: 40px;
+    width: 440px;
+    background-color: #76dbed;
+    border: 2px solid black;
+    display: flex;
+    margin: auto;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    box-shadow: 4px 5px black;
+    border-bottom-left-radius: 20px ;
+    border-bottom-right-radius: 20px ;
+}
+.centre_div{
+    font-family: 'Open Sans', sans-serif;
+    position: absolute;
+    height: 500px;
+    width: 500px;
+    top:50%;
+    left:50%;
+    transform: translate(-50%,-50%);
+    border: 2px solid black;
+    border-radius: 20px;
+    padding: 20px;
+    background-color: #A0E9FF;
+    margin-top: 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.centre_div input,select{
+    border: none;
+    text-decoration: none;
+    font-size: 15px;
+    padding: 10px;
+    border-radius: 5px;
+}
+#submit_btn{
+    background-color: rgb(0, 0, 0);
+    color: white;
+    font-size: 17px;
+    padding: 7px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}

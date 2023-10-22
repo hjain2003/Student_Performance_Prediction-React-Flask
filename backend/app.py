@@ -1,58 +1,50 @@
-import joblib
 from flask import Flask, request, jsonify
+from flask_cors import CORS
+import joblib
 import pandas as pd
 
 app = Flask(__name__)
+CORS(app)
 
-model = joblib.load('hybrid_predictions.pkl')
+# Load your trained machine learning model
+model = joblib.load('linear_regression_model.pkl')
 
-# Mapping of string values to encoded values
-gender_mapping = {'Male': 0, 'Female': 1}
-education_level_mapping = {"Bachelor's": 1, "Master's": 2, "PhD": 3}
-
-# Load your dataset to extract unique job titles
-dataset = pd.read_csv('SalaryData.csv')
-unique_job_titles = dataset['Job_Title'].unique()
-
-# Generate the job_title_mapping based on the unique job titles
-job_title_mapping = {job_title: [0] * len(unique_job_titles) for job_title in unique_job_titles}
+# Load the scaler
+scaler = joblib.load('scaler.pkl')
 
 @app.route('/')
 def home():
-    return "Welcome to Salary Prediction API"
+    return "Welcome to Student Performance API"
 
-@app.route('/predict_salary', methods=['POST'])
-def predict_salary():
+@app.route('/predict', methods=['POST'])
+def predict_score():
     try:
-        input_data = request.get_json()
+        data = request.get_json()
 
-        # Map string values to encoded values
-        gender = gender_mapping.get(input_data['Gender'], None)
-        education_level = education_level_mapping.get(input_data['Education_Level'], None)
+        input_data = [[
+            data['hours_studied'],
+            data['previous_score'], 
+            data['extracurricular_activities'],
+            data['sleep_hours'], 
+            data['sample_papers_solved']
+        ]]
 
-        if gender is None or education_level is None:
-            return jsonify({'error': 'Invalid input for Gender or Education_Level'})
+        print("Input data:", input_data)
 
-        # Retrieve the user's job title and convert it to the encoded format
-        user_job_title = input_data['Job_Title']
-        job_title = job_title_mapping.get(user_job_title, [0] * len(unique_job_titles))
+        # Scale the input data using the loaded scaler
+        input_data_scaled = scaler.transform(input_data)
+        print("Scaled data:", input_data_scaled)
 
-        if not job_title:
-            return jsonify({'error': 'Invalid input for Job_Title'})
+        # Make predictions using the model
+        predicted_score = model.predict(input_data_scaled)[0]
+        rounded_score = round(predicted_score, 2)
+        print("Predicted score:", predicted_score)
 
-        # Continue with the prediction
-        prediction = model.predict([[
-            input_data['Age'],
-            gender,
-            education_level,
-            *job_title,
-            input_data['Years_of_Experience']
-        ]])
+        return jsonify({'predicted_score': rounded_score})
 
-        response = {'predicted_salary': prediction[0]}
-        return jsonify(response)
     except Exception as e:
-        return jsonify({'error': str(e)})
+        print("Error:", str(e))
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run()

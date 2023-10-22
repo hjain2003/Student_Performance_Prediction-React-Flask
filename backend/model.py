@@ -1,93 +1,75 @@
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import Lasso, Ridge
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error, r2_score
-from sklearn.tree import DecisionTreeRegressor
-from sklearn.neighbors import KNeighborsRegressor
 import joblib
 
-dataset = pd.read_csv('SalaryData.csv')
+# Load the dataset
+dataset = pd.read_csv('Student_Performance.csv')
 
-numerical_cols = ['Age', 'Years_of_Experience']
+# Replacing N/A numerical column input features with mean
+numerical_cols = ['hours_studied', 'previous_score', 'sleep_hours', 'sample_papers_solved']
 for col in numerical_cols:
     dataset[col].fillna(dataset[col].mean(), inplace=True)
 
-categorical_columns = ['Gender', 'Education_Level', 'Job_Title']
+# Removing categorical column input features
+categorical_columns = ['extracurricular_activities']
 dataset = dataset.dropna(subset=categorical_columns)
 
+# Removing duplicate rows
 dataset = dataset[~dataset.duplicated()]
 
-# Mapping of string values to encoded values
-gender_mapping = {'Male': 0, 'Female': 1}
-education_level_mapping = {"Bachelor's": 1, "Master's": 2, "PhD": 3}
+# Encoding binary categories
+dataset['extracurricular_activities'] = dataset['extracurricular_activities'].map({'Yes': 1, 'No': 0})
 
-# Extract unique job titles and create a mapping
-unique_job_titles = dataset['Job_Title'].unique()
-job_title_mapping = {job_title: [0] * len(unique_job_titles) for job_title in unique_job_titles}
-for job_title, encoded_value in job_title_mapping.items():
-    encoded_value[unique_job_titles.tolist().index(job_title)] = 1
+# Extracting input and output features
+X = dataset.drop(['performance'], axis=1)
+y = dataset['performance']
 
-dataset['Gender'] = dataset['Gender'].map(gender_mapping)
-dataset['Education_Level'] = dataset['Education_Level'].map(education_level_mapping)
-dataset = pd.get_dummies(dataset, columns=['Job_Title'], prefix='', prefix_sep='')
-
-X = dataset.drop(['Salary'], axis=1)
-y = dataset['Salary']
-
+# Splitting training and testing data (80:20)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
+# Scaling the data
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
-decision_tree = DecisionTreeRegressor(random_state=42)
-random_forest = RandomForestRegressor(n_estimators=100, random_state=42)
-lasso_model = Lasso(alpha=1.0)
-ridge_model = Ridge(alpha=1.0)
+# Save the scaler to a file
+joblib.dump(scaler, 'scaler.pkl')
 
-lasso_model.fit(X_train_scaled, y_train)
-decision_tree.fit(X_train_scaled, y_train)
-random_forest.fit(X_train_scaled, y_train)
-ridge_model.fit(X_train_scaled, y_train)
+# Training the model
+linear_regressor = LinearRegression()
+linear_regressor.fit(X_train_scaled, y_train)
 
-y_pred_lasso = lasso_model.predict(X_test_scaled)
-y_pred_dt = decision_tree.predict(X_test_scaled)
-y_pred_rf = random_forest.predict(X_test_scaled)
-y_pred_ridge = ridge_model.predict(X_test_scaled)
+# Load model into a .pkl file
+joblib.dump(linear_regressor, 'linear_regression_model.pkl')
 
-mse_lasso = mean_squared_error(y_test, y_pred_lasso)
-r2_lasso = r2_score(y_test, y_pred_lasso)
+# Making predictions
+custom_input = {
+    'hours_studied': 8,
+    'previous_score': 85,
+    'extracurricular_activities': 1,
+    'sleep_hours': 7,
+    'sample_papers_solved': 10
+}
 
-mse_dt = mean_squared_error(y_test, y_pred_dt)
-r2_dt = r2_score(y_test, y_pred_dt)
+# Prepare the input data for prediction
+custom_data = pd.DataFrame(custom_input, index=[0])
+custom_data_scaled = scaler.transform(custom_data)
 
-mse_rf = mean_squared_error(y_test, y_pred_rf)
-r2_rf = r2_score(y_test, y_pred_rf)
+# Make predictions using the model
+predicted_score = linear_regressor.predict(custom_data_scaled)[0]
+print(f'\nPredicted Student Score: {predicted_score}')
 
-mse_ridge = mean_squared_error(y_test, y_pred_ridge)
-r2_ridge = r2_score(y_test, y_pred_ridge)
+# Making predictions for evaluation
+y_pred_linear = linear_regressor.predict(X_test_scaled)
 
+# Evaluation parameters
+linear_mse = mean_squared_error(y_test, y_pred_linear)
+linear_r2 = r2_score(y_test, y_pred_linear)
 
-print("Lasso Regression:")
-print("Mean Squared Error: {:.2f}".format(mse_lasso))
-print("R-squared (R2) Score: {:.2f}".format(r2_lasso))
-
-print("\nDecision Tree:")
-print("Mean Squared Error: {:.2f}".format(mse_dt))
-print("R-squared (R2) Score: {:.2f}".format(r2_dt))
-
-print("\nRandom Forest:")
-print("Mean Squared Error: {:.2f}".format(mse_rf))
-print("R-squared (R2) Score: {:.2f}".format(r2_rf))
-
-print("\nRidge Regression:")
-print("Mean Squared Error: {:.2f}".format(mse_ridge))
-print("R-squared (R2) Score: {:.2f}".format(r2_ridge))
-
-joblib.dump(lasso_model, 'hybrid_predictions.pkl')
-
-
-
+# Printing results
+print(f'\nLinear Regression Mean Squared Error: {linear_mse}')
+print(f'Linear Regression R2 score: {linear_r2}')
