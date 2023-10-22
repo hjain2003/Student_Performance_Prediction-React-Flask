@@ -46,23 +46,6 @@ linear_regressor.fit(X_train_scaled, y_train)
 # Load model into a .pkl file
 joblib.dump(linear_regressor, 'linear_regression_model.pkl')
 
-# Making predictions
-custom_input = {
-    'hours_studied': 8,
-    'previous_score': 85,
-    'extracurricular_activities': 1,
-    'sleep_hours': 7,
-    'sample_papers_solved': 10
-}
-
-# Prepare the input data for prediction
-custom_data = pd.DataFrame(custom_input, index=[0])
-custom_data_scaled = scaler.transform(custom_data)
-
-# Make predictions using the model
-predicted_score = linear_regressor.predict(custom_data_scaled)[0]
-print(f'\nPredicted Student Score: {predicted_score}')
-
 # Making predictions for evaluation
 y_pred_linear = linear_regressor.predict(X_test_scaled)
 
